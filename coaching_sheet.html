@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coaching Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root { --ink:#1a1a1a; --line:#aaa; --accent:#c0392b; --bg:#f0ede8; --paper:#ffffff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'Source Serif 4',Georgia,serif; color:var(--ink); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:28px 16px; }
+  .controls { display:flex; gap:10px; margin-bottom:22px; }
+  .controls button { font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; padding:10px 22px; border:1.5px solid var(--ink); background:transparent; cursor:pointer; transition:all .15s; color:var(--ink); }
+  .controls button:hover { background:var(--ink); color:white; }
+  .controls button.primary { background:var(--accent); border-color:var(--accent); color:white; }
+  .controls button.primary:hover { background:#a93226; border-color:#a93226; }
+  .sheet { background:var(--paper); width:100%; max-width:720px; padding:52px 64px; box-shadow:0 4px 40px rgba(0,0,0,.12); border-top:4px solid var(--ink); }
+  .sheet-title { text-align:center; font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:500; letter-spacing:.28em; text-transform:uppercase; margin-bottom:48px; }
+  .field-row { display:flex; align-items:center; margin-bottom:32px; gap:10px; }
+  .field-label { font-size:13px; font-weight:600; white-space:nowrap; min-width:175px; }
+  .driver-wrapper { flex:1; position:relative; }
+  #driver-input { width:100%; border:none; border-bottom:1.5px solid var(--line); outline:none; font-family:'IBM Plex Mono',monospace; font-size:13px; padding:6px 6px; background:transparent; color:var(--ink); transition:border-color .2s; }
+  #driver-input:focus { border-bottom-color:var(--accent); }
+  #driver-dropdown { display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1.5px solid var(--ink); border-top:none; max-height:210px; overflow-y:auto; z-index:100; box-shadow:0 4px 16px rgba(0,0,0,.12); }
+  #driver-dropdown .dd-item { padding:8px 12px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+  #driver-dropdown .dd-item:hover, #driver-dropdown .dd-item.active { background:var(--accent); color:white; }
+  .date-wrapper { display:flex; align-items:center; gap:4px; font-family:'IBM Plex Mono',monospace; font-size:13px; position:relative; }
+  .date-wrapper input[type="text"] { border:none; border-bottom:1.5px solid var(--line); outline:none; font-family:'IBM Plex Mono',monospace; font-size:13px; padding:6px 4px; background:transparent; color:var(--ink); text-align:center; transition:border-color .2s; }
+  .date-wrapper input[type="text"]:focus { border-bottom-color:var(--accent); }
+  .date-mm, .date-dd { width:36px; }
+  .date-yyyy { width:52px; }
+  .date-sep { color:var(--line); font-weight:600; }
+  .cal-icon { cursor:pointer; font-size:15px; margin-left:6px; opacity:.7; transition:opacity .15s; }
+  .cal-icon:hover { opacity:1; }
+  .reason-section { margin-bottom:36px; }
+  .reason-section > .field-label { display:block; margin-bottom:14px; }
+  .reason-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 20px; margin-bottom:16px; }
+  .reason-item { display:flex; align-items:flex-start; gap:9px; padding:9px 12px; border:1.5px solid transparent; cursor:pointer; transition:all .15s; user-select:none; }
+  .reason-item:hover { border-color:#ddd; background:#fafafa; }
+  .reason-item.checked { border-color:var(--accent); background:rgba(192,57,43,.05); }
+  .reason-item input[type="checkbox"] { accent-color:var(--accent); width:14px; height:14px; margin-top:2px; flex-shrink:0; cursor:pointer; }
+  .reason-item span { font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.4; }
+  .reason-textarea { width:100%; min-height:70px; border:none; border-bottom:1.5px solid var(--line); border-left:1.5px solid transparent; outline:none; font-family:'IBM Plex Mono',monospace; font-size:13px; padding:8px 6px; resize:vertical; background:transparent; color:var(--ink); line-height:1.8; transition:border-color .2s; }
+  .reason-textarea:focus { border-bottom-color:var(--accent); border-left-color:var(--accent); }
+  .sig-input { flex:1; border:none; border-bottom:1.5px solid var(--line); outline:none; font-family:'IBM Plex Mono',monospace; font-size:13px; padding:6px 6px; background:transparent; color:var(--ink); font-style:italic; }
+  .sig-input:focus { border-bottom-color:var(--accent); }
+  .divider { border:none; border-top:1px solid #ddd; margin:36px 0; }
+  .notes-block { margin-bottom:0; flex:1; }
+  .notes-block > .field-label { display:block; margin-bottom:12px; }
+  .notes-block textarea { width:100%; min-height:160px; border:none; border-bottom:1.5px solid var(--line); border-left:1.5px solid transparent; outline:none; font-family:'Source Serif 4',serif; font-size:13.5px; padding:8px 6px; resize:vertical; background:transparent; color:var(--ink); line-height:2; transition:border-color .2s; }
+  .notes-block textarea:focus { border-bottom-color:var(--accent); border-left-color:var(--accent); }
+  .disclaimer { font-size:10.5px; color:#666; line-height:1.7; border-top:1px solid #ddd; padding-top:20px; margin-top:36px; font-family:'IBM Plex Mono',monospace; }
+  @page { size: A4; margin: 14mm 18mm; }
+  @media print {
+    html, body { background:white; padding:0; margin:0; width:100%; }
+    .controls { display:none !important; }
+    .sheet { box-shadow:none; border-top:4px solid black; width:100%; max-width:100%; padding:32px 40px; margin:0; }
+    #driver-dropdown { display:none !important; }
+    .reason-item { border-color:transparent !important; background:transparent !important; }
+    .reason-item.checked { border-color:#aaa !important; background:#f5f5f5 !important; }
+    textarea { resize:none !important; overflow:hidden !important; }
+    .reason-textarea { min-height:55px !important; }
+    .notes-block textarea { min-height:130px !important; }
+    .cal-icon { display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button onclick="clearForm()">⟳ Clear</button>
+  <button class="primary" onclick="window.print()">🖨 Print</button>
+</div>
+
+<div class="sheet">
+  <div class="sheet-title">Coaching Sheet</div>
+
+  <div class="field-row">
+    <span class="field-label">Driver:</span>
+    <div class="driver-wrapper">
+      <input type="text" id="driver-input" placeholder="Search driver..." autocomplete="off"
+        oninput="filterDrivers()" onfocus="showDropdown()" onkeydown="navDropdown(event)">
+      <div id="driver-dropdown"></div>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <span class="field-label">Date Of Coaching:</span>
+    <div class="date-wrapper">
+      <input class="date-mm" type="text" id="date-mm" placeholder="MM" maxlength="2" oninput="autoTab(this,'date-dd')">
+      <span class="date-sep">/</span>
+      <input class="date-dd" type="text" id="date-dd" placeholder="DD" maxlength="2" oninput="autoTab(this,'date-yyyy')">
+      <span class="date-sep">/</span>
+      <input class="date-yyyy" type="text" id="date-yyyy" placeholder="YYYY" maxlength="4">
+      <span class="cal-icon" onclick="document.getElementById('date-picker').showPicker ? document.getElementById('date-picker').showPicker() : document.getElementById('date-picker').click()" title="Pick date">📅</span>
+      <input type="date" id="date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" oninput="applyPicker(this.value)">
+    </div>
+  </div>
+
+  <div class="reason-section">
+    <span class="field-label">Reason For Coaching:</span>
+    <div class="reason-grid">
+      <label class="reason-item"><input type="checkbox" value="Improper Package Handling"><span>Improper Package Handling</span></label>
+      <label class="reason-item"><input type="checkbox" value="Unprofessional Conduct"><span>Unprofessional Conduct</span></label>
+      <label class="reason-item"><input type="checkbox" value="Failure to Follow Delivery Instructions"><span>Failure to Follow Delivery Instructions</span></label>
+      <label class="reason-item"><input type="checkbox" value="Misdelivery – Wrong Address"><span>Misdelivery – Wrong Address</span></label>
+      <label class="reason-item"><input type="checkbox" value="Non-Delivery of Package"><span>Non-Delivery of Package</span></label>
+      <label class="reason-item"><input type="checkbox" value="Incorrect Item Delivered"><span>Incorrect Item Delivered</span></label>
+      <label class="reason-item"><input type="checkbox" value="CDF Performance Below Standard"><span>CDF Performance Below Standard</span></label>
+      <label class="reason-item"><input type="checkbox" value="Other – See Notes"><span>Other – See Notes</span></label>
+    </div>
+    <textarea class="reason-textarea" id="reason" placeholder="Additional details..."></textarea>
+  </div>
+
+  <div class="field-row">
+    <span class="field-label">Employee Signature:</span>
+    <input class="sig-input" type="text" id="emp_sig" placeholder="Employee signature">
+  </div>
+
+  <div class="field-row">
+    <span class="field-label">Manager Signature:</span>
+    <input class="sig-input" type="text" id="mgr_sig" placeholder="Manager signature">
+  </div>
+
+  <hr class="divider">
+
+  <div class="notes-block">
+    <span class="field-label">Notes:</span>
+    <textarea id="notes" placeholder="Additional notes..."></textarea>
+  </div>
+
+  <div class="disclaimer">
+    Please note that this coaching—whether signed or not—can be considered grounds for termination.
+  </div>
+</div>
+
+<script>
+const DRIVERS = ["Agbor Benjamin Nso","Agustin Antonio Marchan marcano","Aijah arielle Crockett","Alfredo Villanueva Molina","Allie Nicole Dudley","Alma Escobar","Amira Nicole Bean","Anaya Anderson","Andre Lee Jr Johnson","Andre Omar Ballentine","Andrea Lizbeth Calahorrano Lara","ANICET TEZANOU Fendjio","Anthony david Kinney","Anthony Jeremiah Dunn","Anthony Quinn Jones","Antoine Shawn Mcneely","Antoni Hernandez Nolasco","antonio Marcel austin","Antonio Marquis Nedd","Antony Joseph Rodriguez Nicaragua","Aris Hassan Mayfield","Arturo Demon Gray","Asia Shade Hackett","Avelino Marban Ramirez","Brandon Nixon","Braulio Talamantes","Brian Keith Jr Ebron","Candice Weldon","Carlos Adonay Murgas Castaneda","Carlos Alexander Vargas lugo","Carlos Castaneda Casasola","Carlos Colindres Marquez","Carlos Estrada Franco","Carlos Hernandez gonzalez","Cesar Gomez Melchor","Chakhiyah Michelle Tomlinson","Chioma Nkemdilim Agbim","Christian Joseph Clark","Cornell Gerald Mack III","Craig Rafeal Carroll","Cristian Alexand Lemus Valenzuela","Cristian Alexander Guzman Argueta","Cristian Antonny Sr Zelaya","Cristian Josue Hernandez Martinez","Daniel Isaiah Oneal","Dario Antonio Salazar","Darnell Peoples","Darrien joseph Ruth","Darryl Barbee","Dashon Chappel Anthony","dasse Herve patrick Madou","David Andrew Mcfarlane","Demar Thomas BraggDory","DeMarco Jamarree Seay","Demarco Worthy Haskins","Demetrius Benjamin","Demeturis Caprice Tinch","Denny Angel Almonte Caraballo","Desna Jonie Lee","Destinee Octavia Smith","Devon Adesioye","Dezmond Orlando Wynne","Diana Nataly Navarrete Sorto","Donnell Defon Jordan","Dorian Lamont GebickeLemon","Eddie James Miller","Eddison Fernando Rivera","Edith Yaneth Fuentes Andrade","Edward Bruce Lawson","Elias Brahimi","Elijah Harris","Elvin elian Urquilla","Emmanuel Robert Cole","Ernest Leonardo Jr Thomas","Etienne Tolbert","Eulises Alberto Castro","Fabian Augusto Pimiento Guerrero","Fernando Jose Alvarez Garcia","Franklin Davi Hernandez Servellon","Garba Hassane Souley","Gregory Joseph Daniels jr","Hazel Marie Cowles","Homero Junior Ortega","Ishmael Takio Griffie","Jamall Jay Simmons","Jarah SK Gibson","Jennifer Ariana Escobar","Jerel Adrian Pleasant","Jeremy Fletcher Kaplan Markley","Jeremy Joseph Kottiri","Jesus Wiliam Martinez Fonseca","Jonathan Edenilson Monge Chicas","Jonathan Ric Apolinar Escobar","Jorge David Feliz Leger","Jorge Piti Beriguete","Jose Angel Fernandez Montes","Jose David Morales","Jose Miguel Mota quezada","Joseph Haendel Ocampo Cajina","Josue Alexis Hernandez Parada","josue Frejust medzo","JOVANNI HENRIQUEZ","Juan Manuel Corrales Sarramera","Judith Reyes","Julian Alexander Graves","Julio Cesar Jr Ceballos","Kelvin Joel Velazquez Fonseca","Kenia Garcia Garcia","Kenneth Williams","Kevin Machado canas","Keyla Alexandra Perez Ramirez","Kiara Jene Thomas","Kierron Gianno Watkins","Laniyah Chanell Tooks","Larnell William Campbell","Leah Nichole Miller","Leandro Arnulfo Melchor","Liana Josefina Fernandez Dilone","Macajah Spious Colley","Majed Ziad Arfeh","Malik Louis Walton","Marcus D Skinner","Mariela Mota Liriano","Mario Barahona MArquez","Marquette Ricardo Hawkins","Marron Franklin Anthony Nowlin","Mathias Che ngwa","Maxwell jameison Harvey","Melese munaw","Michael Ernesto Perez Estrella","Michael Wayne Moore","Michelle Antonette Williams","Moises Alejandro Flores Vargas","Moises Enrique Guillen Millan","Monieka Simone Hines","myia adams","Noe Ricardo Euceda Rodriguez","Omari Lamont Thomas","Oniel Fisher","Oscar Benitez Barahona","Oscar Eduardo Matos feliz","Paresh Pradhan","Paul Hackett Matos","Perkins R Derrick","Rafaela Mercedes Palacios Ochoa","Rasheen Quick","Regina Dersha Mack","Reginald Keith Tolliver","Ricky Marcia Granados","Roland Adrain Lewis","Rone Franklin Pitts","Ryan Alessandro Gomez","Samual Jalen Willis","Sanfa Albert Kanneh","Sergio Mollo Castro","Shaniah Janae Stewart","Shanonsa Walls","Shawn Beal","Sidra Catherine Cross","Stanley Allotey","Tajea Mitchell Banks","Tatianna Symone Robinson Gamble","Tayvon Kamar Channer","Thorn Lee Meekins","Tiara Lavern Goodman","Timothy Andre Green","Toneisha Wright","Tynaje Smith","Ubaid Tariq","Victor Josue Mendez Godoy","VJ Maurice Kibler","Wayne Neal","Willian Gonzalez Alvarado","Willians Mejia Garcia","Yissel Sierragarcia","Yosef Befekadu Ashine","Zachary Nicholas Jordan"];
+
+let ddActive = -1;
+const input = document.getElementById('driver-input');
+const dropdown = document.getElementById('driver-dropdown');
+
+function filterDrivers() {
+  const q = input.value.toLowerCase();
+  const filtered = q.length === 0 ? DRIVERS : DRIVERS.filter(n => n.toLowerCase().includes(q));
+  renderDropdown(filtered);
+}
+
+function renderDropdown(list) {
+  if (!list.length) { dropdown.style.display='none'; return; }
+  dropdown.innerHTML = list.map(n => `<div class="dd-item" data-name="${n}">${n}</div>`).join('');
+  dropdown.querySelectorAll('.dd-item').forEach(el => {
+    el.addEventListener('mousedown', () => selectDriver(el.dataset.name));
+  });
+  dropdown.style.display = 'block';
+  ddActive = -1;
+}
+
+function showDropdown() { filterDrivers(); }
+
+function selectDriver(name) {
+  input.value = name;
+  dropdown.style.display = 'none';
+}
+
+function navDropdown(e) {
+  const items = dropdown.querySelectorAll('.dd-item');
+  if (!items.length) return;
+  if (e.key==='ArrowDown') { e.preventDefault(); ddActive=Math.min(ddActive+1,items.length-1); }
+  else if (e.key==='ArrowUp') { e.preventDefault(); ddActive=Math.max(ddActive-1,0); }
+  else if (e.key==='Enter' && ddActive>=0) { e.preventDefault(); selectDriver(items[ddActive].dataset.name); return; }
+  else if (e.key==='Escape') { dropdown.style.display='none'; return; }
+  items.forEach((el,i) => el.classList.toggle('active', i===ddActive));
+  if (ddActive>=0) items[ddActive].scrollIntoView({block:'nearest'});
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.driver-wrapper')) dropdown.style.display='none';
+});
+
+// Checkbox visual sync
+document.querySelectorAll('.reason-item').forEach(label => {
+  label.addEventListener('change', () => {
+    label.classList.toggle('checked', label.querySelector('input').checked);
+  });
+});
+
+function autoTab(el, nextId) {
+  if (el.value.length >= el.maxLength) document.getElementById(nextId).focus();
+}
+
+function setTodayDate() {
+  const d = new Date();
+  document.getElementById('date-mm').value = String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('date-dd').value = String(d.getDate()).padStart(2,'0');
+  document.getElementById('date-yyyy').value = d.getFullYear();
+}
+
+function applyPicker(val) {
+  if (!val) return;
+  const [y, m, d] = val.split('-');
+  document.getElementById('date-mm').value = m;
+  document.getElementById('date-dd').value = d;
+  document.getElementById('date-yyyy').value = y;
+}
+
+function clearForm() {
+  input.value='';
+  setTodayDate();
+  document.getElementById('reason').value='';
+  document.querySelectorAll('.reason-item input').forEach(cb => cb.checked=false);
+  document.querySelectorAll('.reason-item').forEach(el => el.classList.remove('checked'));
+  document.getElementById('emp_sig').value='';
+  document.getElementById('mgr_sig').value='';
+  document.getElementById('notes').value='';
+}
+
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+setTodayDate();
+</script>
+</body>
+</html>
