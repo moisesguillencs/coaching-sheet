@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coaching Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --ink: #1a1a1a;
+    --line: #bbb;
+    --accent: #c0392b;
+    --bg: #eceae5;
+    --paper: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── SCREEN ── */
+  body {
+    background: var(--bg);
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    min-height: 100vh;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .controls button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 9px 22px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all .15s;
+  }
+  .controls button:hover { background: var(--ink); color: white; }
+  .controls button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .controls button.primary:hover { background: #a93226; }
+
+  /* Letter: 8.5in wide. At 96dpi screen ≈ 816px. We simulate at 750px for comfort. */
+  .sheet {
+    background: var(--paper);
+    width: min(750px, 95vw);
+    min-height: 970px;
+    padding: 52px 64px 48px;
+    box-shadow: 0 4px 40px rgba(0,0,0,.13);
+    border-top: 5px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Title */
+  .sheet-title {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    margin-top: 28px;
+    margin-bottom: 36px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* Fields */
+  .field-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 12px;
+  }
+  .field-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 165px;
+    letter-spacing: .01em;
+  }
+
+  /* Driver */
+  .driver-wrapper { flex: 1; position: relative; }
+  #driver-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid var(--line);
+    outline: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 5px 4px;
+    background: transparent;
+    color: var(--ink);
+  }
+  #driver-input:focus { border-bottom-color: var(--accent); }
+  #driver-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: white;
+    border: 1.5px solid var(--ink);
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  }
+  #driver-dropdown .dd-item {
+    padding: 7px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  #driver-dropdown .dd-item:hover,
+  #driver-dropdown .dd-item.active { background: var(--accent); color: white; }
+
+  /* Date */
+  .date-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+  }
+  .date-wrapper input[type="text"] {
+    border: none;
+    border-bottom: 1.5px solid var(--line);
+    outline: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 5px 3px;
+    background: transparent;
+    color: var(--ink);
+    text-align: center;
+  }
+  .date-wrapper input[type="text"]:focus { border-bottom-color: var(--accent); }
+  .date-mm, .date-dd { width: 34px; }
+  .date-yyyy { width: 52px; }
+  .date-sep { color: var(--line); font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .cal-icon {
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 8px;
+    opacity: .6;
+    transition: opacity .15s;
+  }
+  .cal-icon:hover { opacity: 1; }
+
+  /* Reason */
+  .reason-section { margin-bottom: 30px; }
+  .reason-section > .field-label { display: block; margin-bottom: 16px; }
+  .reason-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .reason-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: all .13s;
+    background: transparent;
+  }
+  .reason-item:hover { background: #f5f5f5; }
+  .reason-item.checked { background: rgba(192,57,43,.04); }
+  .reason-item input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .reason-item span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .reason-textarea {
+    width: 100%;
+    min-height: 54px;
+    border: none;
+    border-bottom: 1.5px solid var(--line);
+    outline: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 6px 4px;
+    resize: vertical;
+    background: transparent;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+  .reason-textarea:focus { border-bottom-color: var(--accent); }
+
+  /* Signatures */
+  .sig-section {
+    border-top: 1px solid #ddd;
+    padding-top: 28px;
+    margin-bottom: 28px;
+  }
+  .sig-input {
+    flex: 1;
+    border: none;
+    border-bottom: 1.5px solid var(--line);
+    outline: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 8px 4px;
+    background: transparent;
+    color: var(--ink);
+    font-style: italic;
+  }
+  .sig-input:focus { border-bottom-color: var(--accent); }
+
+  /* Notes */
+  .notes-block {
+    border-top: 1px solid #ddd;
+    padding-top: 28px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 28px;
+  }
+  .notes-block > .field-label { display: block; margin-bottom: 12px; }
+  .notes-block textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 120px;
+    border: none;
+    border-bottom: 1.5px solid var(--line);
+    outline: none;
+    font-family: 'Source Serif 4', serif;
+    font-size: 13px;
+    padding: 6px 4px;
+    resize: vertical;
+    background: transparent;
+    color: var(--ink);
+    line-height: 2;
+  }
+  .notes-block textarea:focus { border-bottom-color: var(--accent); }
+
+  /* Disclaimer */
+  .disclaimer {
+    border-top: 1px solid #ddd;
+    padding-top: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: #999;
+    line-height: 1.6;
+    margin-top: auto;
+  }
+
+  /* ── PRINT ── */
+  @page {
+    size: letter portrait;
+    margin: 14mm 16mm;
+  }
+
+  @media print {
+    html {
+      background: white !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      zoom: 1 !important;
+    }
+
+    body {
+      background: white !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: block !important;
+      width: auto !important;
+      transform: none !important;
+    }
+
+    .controls { display: none !important; }
+
+    .sheet {
+      width: auto !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      box-shadow: none !important;
+      border-top: 5px solid black !important;
+    }
+
+    .sheet-title { margin-top: 24px !important; }
+
+    /* Spacing for print */
+    .field-row { margin-bottom: 22px !important; }
+    .reason-section { margin-bottom: 22px !important; }
+    .reason-grid { gap: 10px 16px !important; margin-bottom: 14px !important; }
+    .reason-item { padding: 6px 6px !important; }
+    .reason-textarea { min-height: 44px !important; resize: none !important; overflow: hidden !important; }
+    .sig-section { padding-top: 22px !important; margin-bottom: 22px !important; }
+    .notes-block { padding-top: 22px !important; margin-bottom: 22px !important; }
+    .notes-block textarea { min-height: 110px !important; resize: none !important; overflow: hidden !important; }
+
+    /* Hide interactive elements */
+    #driver-dropdown { display: none !important; }
+    .cal-icon { display: none !important; }
+    input::placeholder, textarea::placeholder { color: transparent !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button onclick="clearForm()">⟳ Clear</button>
+  <button class="primary" onclick="window.print()">🖨 Print</button>
+</div>
+
+<div class="sheet">
+  <div class="sheet-title">Coaching Sheet</div>
+
+  <div class="field-row">
+    <span class="field-label">Driver:</span>
+    <div class="driver-wrapper">
+      <input type="text" id="driver-input" placeholder="Search driver..." autocomplete="off"
+        oninput="filterDrivers()" onfocus="showDropdown()" onkeydown="navDropdown(event)">
+      <div id="driver-dropdown"></div>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <span class="field-label">Date Of Coaching:</span>
+    <div class="date-wrapper">
+      <input class="date-mm" type="text" id="date-mm" placeholder="MM" maxlength="2" oninput="autoTab(this,'date-dd')">
+      <span class="date-sep">/</span>
+      <input class="date-dd" type="text" id="date-dd" placeholder="DD" maxlength="2" oninput="autoTab(this,'date-yyyy')">
+      <span class="date-sep">/</span>
+      <input class="date-yyyy" type="text" id="date-yyyy" placeholder="YYYY" maxlength="4">
+      <span class="cal-icon" title="Pick date"
+        onclick="document.getElementById('date-picker').showPicker ? document.getElementById('date-picker').showPicker() : document.getElementById('date-picker').click()">📅</span>
+      <input type="date" id="date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" oninput="applyPicker(this.value)">
+    </div>
+  </div>
+
+  <div class="reason-section">
+    <span class="field-label">Reason For Coaching:</span>
+    <div class="reason-grid">
+      <label class="reason-item"><input type="checkbox"><span>Improper Package Handling</span></label>
+      <label class="reason-item"><input type="checkbox"><span>Unprofessional Conduct</span></label>
+      <label class="reason-item"><input type="checkbox"><span>Failure to Follow Delivery Instructions</span></label>
+      <label class="reason-item"><input type="checkbox"><span>Misdelivery – Wrong Address</span></label>
+      <label class="reason-item"><input type="checkbox"><span>Non-Delivery of Package</span></label>
+      <label class="reason-item"><input type="checkbox"><span>Incorrect Item Delivered</span></label>
+      <label class="reason-item"><input type="checkbox"><span>CDF Performance Below Standard</span></label>
+      <label class="reason-item"><input type="checkbox"><span>DSP Performance Below Standard</span></label>
+      <label class="reason-item"><input type="checkbox"><span>Other – See Notes</span></label>
+    </div>
+    <textarea class="reason-textarea" id="reason" placeholder="Additional details..."></textarea>
+  </div>
+
+  <div class="sig-section">
+    <div class="field-row" style="margin-bottom:18px;">
+      <span class="field-label">Employee Signature:</span>
+      <input class="sig-input" type="text" id="emp_sig" placeholder="Employee signature">
+    </div>
+    <div class="field-row" style="margin-bottom:0;">
+      <span class="field-label">Manager Signature:</span>
+      <input class="sig-input" type="text" id="mgr_sig" placeholder="Manager signature">
+    </div>
+  </div>
+
+  <div class="notes-block">
+    <span class="field-label">Notes:</span>
+    <textarea id="notes" placeholder="Additional notes..."></textarea>
+  </div>
+
+  <div class="disclaimer">
+    Please note that this coaching—whether signed or not—can be considered grounds for termination.
+  </div>
+</div>
+
+<script>
+const DRIVERS = ["Agbor Benjamin Nso","Agustin Antonio Marchan marcano","Aijah arielle Crockett","Alfredo Villanueva Molina","Allie Nicole Dudley","Alma Escobar","Amira Nicole Bean","Anaya Anderson","Andre Lee Jr Johnson","Andre Omar Ballentine","Andrea Lizbeth Calahorrano Lara","ANICET TEZANOU Fendjio","Anthony david Kinney","Anthony Jeremiah Dunn","Anthony Quinn Jones","Antoine Shawn Mcneely","Antoni Hernandez Nolasco","antonio Marcel austin","Antonio Marquis Nedd","Antony Joseph Rodriguez Nicaragua","Aris Hassan Mayfield","Arturo Demon Gray","Asia Shade Hackett","Avelino Marban Ramirez","Brandon Nixon","Braulio Talamantes","Brian Keith Jr Ebron","Candice Weldon","Carlos Adonay Murgas Castaneda","Carlos Alexander Vargas lugo","Carlos Castaneda Casasola","Carlos Colindres Marquez","Carlos Estrada Franco","Carlos Hernandez gonzalez","Cesar Gomez Melchor","Chakhiyah Michelle Tomlinson","Chioma Nkemdilim Agbim","Christian Joseph Clark","Cornell Gerald Mack III","Craig Rafeal Carroll","Cristian Alexand Lemus Valenzuela","Cristian Alexander Guzman Argueta","Cristian Antonny Sr Zelaya","Cristian Josue Hernandez Martinez","Daniel Isaiah Oneal","Dario Antonio Salazar","Darnell Peoples","Darrien joseph Ruth","Darryl Barbee","Dashon Chappel Anthony","dasse Herve patrick Madou","David Andrew Mcfarlane","Demar Thomas BraggDory","DeMarco Jamarree Seay","Demarco Worthy Haskins","Demetrius Benjamin","Demeturis Caprice Tinch","Denny Angel Almonte Caraballo","Desna Jonie Lee","Destinee Octavia Smith","Devon Adesioye","Dezmond Orlando Wynne","Diana Nataly Navarrete Sorto","Donnell Defon Jordan","Dorian Lamont GebickeLemon","Eddie James Miller","Eddison Fernando Rivera","Edith Yaneth Fuentes Andrade","Edward Bruce Lawson","Elias Brahimi","Elijah Harris","Elvin elian Urquilla","Emmanuel Robert Cole","Ernest Leonardo Jr Thomas","Etienne Tolbert","Eulises Alberto Castro","Fabian Augusto Pimiento Guerrero","Fernando Jose Alvarez Garcia","Franklin Davi Hernandez Servellon","Garba Hassane Souley","Gregory Joseph Daniels jr","Hazel Marie Cowles","Homero Junior Ortega","Ishmael Takio Griffie","Jamall Jay Simmons","Jarah SK Gibson","Jennifer Ariana Escobar","Jerel Adrian Pleasant","Jeremy Fletcher Kaplan Markley","Jeremy Joseph Kottiri","Jesus Wiliam Martinez Fonseca","Jonathan Edenilson Monge Chicas","Jonathan Ric Apolinar Escobar","Jorge David Feliz Leger","Jorge Piti Beriguete","Jose Angel Fernandez Montes","Jose David Morales","Jose Miguel Mota quezada","Joseph Haendel Ocampo Cajina","Josue Alexis Hernandez Parada","josue Frejust medzo","JOVANNI HENRIQUEZ","Juan Manuel Corrales Sarramera","Judith Reyes","Julian Alexander Graves","Julio Cesar Jr Ceballos","Kelvin Joel Velazquez Fonseca","Kenia Garcia Garcia","Kenneth Williams","Kevin Machado canas","Keyla Alexandra Perez Ramirez","Kiara Jene Thomas","Kierron Gianno Watkins","Laniyah Chanell Tooks","Larnell William Campbell","Leah Nichole Miller","Leandro Arnulfo Melchor","Liana Josefina Fernandez Dilone","Macajah Spious Colley","Majed Ziad Arfeh","Malik Louis Walton","Marcus D Skinner","Mariela Mota Liriano","Mario Barahona MArquez","Marquette Ricardo Hawkins","Marron Franklin Anthony Nowlin","Mathias Che ngwa","Maxwell jameison Harvey","Melese munaw","Michael Ernesto Perez Estrella","Michael Wayne Moore","Michelle Antonette Williams","Moises Alejandro Flores Vargas","Moises Enrique Guillen Millan","Monieka Simone Hines","myia adams","Noe Ricardo Euceda Rodriguez","Omari Lamont Thomas","Oniel Fisher","Oscar Benitez Barahona","Oscar Eduardo Matos feliz","Paresh Pradhan","Paul Hackett Matos","Perkins R Derrick","Rafaela Mercedes Palacios Ochoa","Rasheen Quick","Regina Dersha Mack","Reginald Keith Tolliver","Ricky Marcia Granados","Roland Adrain Lewis","Rone Franklin Pitts","Ryan Alessandro Gomez","Samual Jalen Willis","Sanfa Albert Kanneh","Sergio Mollo Castro","Shaniah Janae Stewart","Shanonsa Walls","Shawn Beal","Sidra Catherine Cross","Stanley Allotey","Tajea Mitchell Banks","Tatianna Symone Robinson Gamble","Tayvon Kamar Channer","Thorn Lee Meekins","Tiara Lavern Goodman","Timothy Andre Green","Toneisha Wright","Tynaje Smith","Ubaid Tariq","Victor Josue Mendez Godoy","VJ Maurice Kibler","Wayne Neal","Willian Gonzalez Alvarado","Willians Mejia Garcia","Yissel Sierragarcia","Yosef Befekadu Ashine","Zachary Nicholas Jordan"];
+
+let ddActive = -1;
+const input = document.getElementById('driver-input');
+const dropdown = document.getElementById('driver-dropdown');
+
+function filterDrivers() {
+  const q = input.value.toLowerCase();
+  const filtered = q.length === 0 ? DRIVERS : DRIVERS.filter(n => n.toLowerCase().includes(q));
+  renderDropdown(filtered);
+}
+
+function renderDropdown(list) {
+  if (!list.length) { dropdown.style.display = 'none'; return; }
+  dropdown.innerHTML = list.map(n => `<div class="dd-item" data-name="${n}">${n}</div>`).join('');
+  dropdown.querySelectorAll('.dd-item').forEach(el => {
+    el.addEventListener('mousedown', () => selectDriver(el.dataset.name));
+  });
+  dropdown.style.display = 'block';
+  ddActive = -1;
+}
+
+function showDropdown() { filterDrivers(); }
+
+function selectDriver(name) {
+  input.value = name;
+  dropdown.style.display = 'none';
+}
+
+function navDropdown(e) {
+  const items = dropdown.querySelectorAll('.dd-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); ddActive = Math.min(ddActive + 1, items.length - 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); ddActive = Math.max(ddActive - 1, 0); }
+  else if (e.key === 'Enter' && ddActive >= 0) { e.preventDefault(); selectDriver(items[ddActive].dataset.name); return; }
+  else if (e.key === 'Escape') { dropdown.style.display = 'none'; return; }
+  items.forEach((el, i) => el.classList.toggle('active', i === ddActive));
+  if (ddActive >= 0) items[ddActive].scrollIntoView({ block: 'nearest' });
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.driver-wrapper')) dropdown.style.display = 'none';
+});
+
+document.querySelectorAll('.reason-item').forEach(label => {
+  label.addEventListener('change', () => {
+    label.classList.toggle('checked', label.querySelector('input').checked);
+  });
+});
+
+function autoTab(el, nextId) {
+  if (el.value.length >= el.maxLength) document.getElementById(nextId).focus();
+}
+
+function setTodayDate() {
+  const d = new Date();
+  document.getElementById('date-mm').value = String(d.getMonth() + 1).padStart(2, '0');
+  document.getElementById('date-dd').value = String(d.getDate()).padStart(2, '0');
+  document.getElementById('date-yyyy').value = d.getFullYear();
+}
+
+function applyPicker(val) {
+  if (!val) return;
+  const [y, m, d] = val.split('-');
+  document.getElementById('date-mm').value = m;
+  document.getElementById('date-dd').value = d;
+  document.getElementById('date-yyyy').value = y;
+}
+
+function clearForm() {
+  input.value = '';
+  document.getElementById('date-mm').value = '';
+  document.getElementById('date-dd').value = '';
+  document.getElementById('date-yyyy').value = '';
+  document.getElementById('reason').value = '';
+  document.querySelectorAll('.reason-item input').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.reason-item').forEach(el => el.classList.remove('checked'));
+  document.getElementById('emp_sig').value = '';
+  document.getElementById('mgr_sig').value = '';
+  document.getElementById('notes').value = '';
+}
+</script>
+</body>
+</html>
